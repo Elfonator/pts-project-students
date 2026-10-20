@@ -8,6 +8,7 @@ import org.junit.jupiter.api.TestInfo;
 import sk.testlab.support.Artifacts;
 import sk.testlab.support.TestConfig;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -71,18 +72,46 @@ class ApiQuoteTest {
     }
 
     @Test
-    void invalidQuantityTypeIsRejected() {
-        // TODO 1: POST /cart/quote so sku KB-001 a quantity ako STRING "2".
-        // TODO 2: over HTTP 422.
-        // TODO 3: over error.code = VALIDATION_ERROR.
-        // Odstran nasledujucu vynimku po implementacii.
-        throw new UnsupportedOperationException("TODO student: invalidQuantityTypeIsRejected");
+    void invalidQuantityTypeIsRejected() throws IOException {
+        var request = Map.of(
+                "items", List.of(
+                        Map.of("sku", "KB-001", "quantity", "2")));
+
+        given()
+                .filter(artifacts.httpLog("/cart/quote"))
+                .auth().oauth2(token)
+                .contentType(ContentType.JSON)
+                .queryParam("route", "/cart/quote")
+                // JSON string "2", not integer 2
+                .body(request)
+                .when()
+                .post(config.baseUrl + "api/index.php")
+                .then()
+                .statusCode(422)
+                .body("error.code", equalTo("VALIDATION_ERROR"));
+        artifacts.put("result", "PASSED");
     }
 
     @Test
-    void outOfStockIsRejected() {
-        // BONUS TODO: sku HUB-001, quantity integer 1, pickup, bez kuponu.
-        // Over status 409, error.code = OUT_OF_STOCK, error.details.available = 0.
-        throw new UnsupportedOperationException("BONUS TODO student: outOfStockIsRejected");
+    void outOfStockIsRejected() throws IOException {
+        var request = Map.of(
+                "items", List.of(
+                        Map.of("sku", "HUB-001", "quantity", 1)),
+                "coupon_code", "",
+                "delivery_method", "pickup");
+        given()
+                .filter(artifacts.httpLog("/cart/quote"))
+                .auth().oauth2(token)
+                .contentType(ContentType.JSON)
+                .queryParam("route", "/cart/quote")
+                // HUB-001 stock = 0 in a NEW fixture. Quantity must stay in 1..20.
+                .body(request)
+                .when()
+                .post(config.baseUrl + "api/index.php")
+                .then()
+                .statusCode(409)
+                .body("error.code", equalTo("OUT_OF_STOCK"))
+                .body("error.details.available", equalTo(0));
+        artifacts.put("result", "PASSED");
     }
 }
