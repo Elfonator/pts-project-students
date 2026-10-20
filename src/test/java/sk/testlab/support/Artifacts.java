@@ -108,8 +108,10 @@ public final class Artifacts {
             requestLog.append("X-Test-Key=")
                     .append(request.getHeaders().hasHeaderWithName("X-Test-Key") ? "[REDACTED]" : "absent")
                     .append('\n');
+            // getBody() is <T> T; String.valueOf(char[]) would be chosen and then fail on a String body.
+            Object body = request.getBody();
             requestLog.append("body=\n")
-                    .append(sensitive ? "[SENSITIVE BODY OMITTED]\n" : String.valueOf(request.getBody()));
+                    .append(sensitive ? "[SENSITIVE BODY OMITTED]\n" : String.valueOf(body));
             attempt(() -> write(prefix + "-request.txt", requestLog.toString()), null);
 
             Response response = context.next(request, responseSpec);
