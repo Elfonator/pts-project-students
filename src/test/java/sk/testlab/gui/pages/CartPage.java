@@ -14,6 +14,7 @@ public class CartPage {
     private final By couponInput = By.cssSelector("[data-testid='coupon-input']");
     private final By couponApply = By.cssSelector("[data-testid='coupon-apply']");
     private final By quoteTotal = By.cssSelector("[data-testid='quote-total']");
+    private final By quoteShipping = By.cssSelector("[data-testid='quote-shipping']");
     private final By proceedCheckout = By.cssSelector("[data-testid='proceed-checkout']");
 
     public CartPage(
@@ -25,11 +26,22 @@ public class CartPage {
 
     public void open() {
         wait.until(ExpectedConditions.elementToBeClickable(navCart)).click();
+        wait.until(ExpectedConditions.visibilityOfElementLocated(quoteTotal));
     }
 
     public void selectDelivery(String value) {
         WebElement select = wait.until(ExpectedConditions.visibilityOfElementLocated(deliveryMethod));
-        new Select(select).selectByValue(value);
+        Select delivery = new Select(select);
+        String current = delivery.getFirstSelectedOption().getDomAttribute("value");
+        if (value.equals(current)) {
+            wait.until(ExpectedConditions.visibilityOfElementLocated(quoteTotal));
+            return;
+        }
+
+        WebElement previousQuote = wait.until(ExpectedConditions.visibilityOfElementLocated(quoteTotal));
+        delivery.selectByValue(value);
+        wait.until(ExpectedConditions.stalenessOf(previousQuote));
+        wait.until(ExpectedConditions.visibilityOfElementLocated(quoteTotal));
     }
 
     public void applyCoupon(String coupon) {
@@ -47,6 +59,18 @@ public class CartPage {
 
         // Wait for the new price
         wait.until(ExpectedConditions.visibilityOfElementLocated(quoteTotal));
+    }
+
+    public int shippingCents() {
+        String cents = wait.until(ExpectedConditions.visibilityOfElementLocated(quoteShipping))
+                .getDomAttribute("data-cents");
+        return Integer.parseInt(cents);
+    }
+
+    public int totalCents() {
+        String cents = wait.until(ExpectedConditions.visibilityOfElementLocated(quoteTotal))
+                .getDomAttribute("data-cents");
+        return Integer.parseInt(cents);
     }
 
     public void proceedToCheckout() {
