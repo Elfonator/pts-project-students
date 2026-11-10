@@ -4,6 +4,9 @@ import io.cucumber.java.PendingException;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import sk.testlab.bdd.support.ScenarioContext;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * TASK — implement only the steps unique to create-order.
@@ -16,31 +19,46 @@ public class CreateOrderStepsTask {
 
     @Given("a logged-in user")
     public void aLoggedInUser() {
-        // TODO: open the app and log in with ScenarioContext config credentials
-        throw new PendingException("Wire login via LoginPage / ScenarioContext");
+        ScenarioContext ctx = ScenarioContext.get();
+        ctx.login.open();
+        ctx.login.login(ctx.config.email, ctx.config.password);
+        ctx.catalog.waitUntilReady();
     }
 
     @When("the user adds the reference cart items")
     public void theUserAddsTheReferenceCartItems() {
-        // TODO: KB-001 × 2 and MS-001 × 1 (same cart as OrderWorkflow / ApiQuoteTest)
-        throw new PendingException("Add reference products via CatalogPage or OrderWorkflow");
+        ScenarioContext ctx = ScenarioContext.get();
+        // Same cart as OrderWorkflow / ApiQuoteTest: KB-001 × 2, MS-001 × 1
+        ctx.catalog.addProduct("KB-001", 1);
+        ctx.catalog.addProduct("KB-001", 2);
+        ctx.catalog.addProduct("MS-001", 3);
+        ctx.cart.open();
     }
 
     @When("the user places the order")
     public void theUserPlacesTheOrder() {
-        // TODO: checkout customer details, accept terms, place order
-        throw new PendingException("Complete checkout via CheckoutPage or OrderWorkflow");
+        ScenarioContext ctx = ScenarioContext.get();
+        ctx.cart.proceedToCheckout();
+        ctx.checkout.waitUntilReady();
+        ctx.checkout.fillCustomer(
+                "Student Testovaci",
+                "student@example.test",
+                "Testovacia 12",
+                "Nitra",
+                "949 01");
+        ctx.checkout.acceptTerms();
+        ctx.checkout.placeOrder();
+        ctx.order.getOrderId();
     }
 
     @Then("the order status is {string}")
     public void theOrderStatusIs(String expectedStatus) {
-        // TODO: assert OrderDetailPage status
-        throw new PendingException("Assert order status via OrderDetailPage");
+        assertEquals(expectedStatus, ScenarioContext.get().order.getStatus());
     }
 
     @Then("the order total is {int} cents")
     public void theOrderTotalIsCents(int expectedTotal) {
-        // TODO: assert OrderDetailPage total (data-cents)
-        throw new PendingException("Assert order total via OrderDetailPage");
+        int actual = Integer.parseInt(ScenarioContext.get().order.getTotalCents());
+        assertEquals(expectedTotal, actual);
     }
 }

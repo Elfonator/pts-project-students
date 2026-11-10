@@ -1,4 +1,4 @@
-@task
+@example
 Feature: Create reference order
   Rewrite the known GUI create-order flow as an executable specification.
   Reuse OrderWorkflow or existing page objects in the step definitions - not raw Selenium.
